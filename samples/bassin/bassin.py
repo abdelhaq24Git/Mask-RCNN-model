@@ -54,7 +54,7 @@ class BassinDataset(utils.Dataset):
                height, width = image.shape[:2]
 
                self.add_image(
-                   "basin",
+                   "bassin",
                    image_id=image_id,
                    path=image_fp,
                    width=width,
