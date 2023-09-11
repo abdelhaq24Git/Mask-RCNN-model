@@ -35,35 +35,31 @@ class BassinDataset(utils.Dataset):
     subset: Subset to load: train or val
     """
     # Add classes. You might have different class names and IDs.
-    self.add_class("basin", 1, "irrigation_basin")
+           self.add_class("basin", 1, "irrigation_basin")
 
     # Train or validation dataset?
-    assert subset in ["train", "val"]
-    dataset_dir = os.path.join(dataset_dir, subset)
+           assert subset in ["train", "val"]
+           image_dir = os.path.join(dataset_dir,subset,subset + "_images")  # Use "_images" suffix for images
+           mask_dir = os.path.join(dataset_dir,subset,subset + "_masks")    # Use "_masks" suffix for masks
 
-    # Load annotations from your JSON file
-    annotations = json.load(open(os.path.join(dataset_dir, "annotations.json")))
+    # Get a list of image file names
+           image_fps = glob.glob(os.path.join(image_dir, "*.tif"))
 
-    # Filter out annotations without bounding box information
-    annotations = [a for a in annotations if 'bbox' in a]
+           for image_id, image_fp in enumerate(image_fps):
+        # Construct the corresponding mask file path based on the image file name
+               mask_fp = os.path.join(mask_dir,image_fp)
 
-    # Add images
-    for annotation in annotations:
-        # Extract bounding box coordinates
-        bbox = annotation['bbox']
-        x, y, width, height = bbox
+        # Load image size
+               image = skimage.io.imread(image_fp)
+               height, width = image.shape[:2]
 
-        # Load image size from image file
-        image_path = os.path.join(dataset_dir, "train_images", annotation['image_id'])
-        image = skimage.io.imread(image_path)
-        height, width = image.shape[:2]
-
-        self.add_image(
-            "basin",
-            image_id=annotation['image_id'],  # use file name as a unique image id
-            path=image_path,
-            width=width, height=height,
-            bbox=bbox)  # Pass the bounding box information to the dataset
+               self.add_image(
+                   "basin",
+                   image_id=image_id,
+                   path=image_fp,
+                   width=width,
+                   height=height,
+                   mask_path=mask_fp)
   #def load_mask(self, image_id):
     
     #image_info = self.image_info[image_id]
