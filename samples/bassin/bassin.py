@@ -64,39 +64,63 @@ class BassinDataset(utils.Dataset):
             path=image_path,
             width=width, height=height,
             bbox=bbox)  # Pass the bounding box information to the dataset
-  def load_mask(self, image_id):
-    """Generate instance masks for an image.
-    Returns:
-    masks: A bool array of shape [height, width, instance count] with
-        one mask per instance.
-    class_ids: a 1D array of class IDs of the instance masks.
-    """
-    image_info = self.image_info[image_id]
+  #def load_mask(self, image_id):
+    
+    #image_info = self.image_info[image_id]
     
     # Check the source of the image
-    if image_info["source"] != "bassin":
-        return super(self.__class__, self).load_mask(image_id)
+    #if image_info["source"] != "bassin":
+        #return super(self.__class__, self).load_mask(image_id)
 
     # Load annotations for the image
-    annotations = self.image_info[image_id]["annotations"]
-    num_instances = len(annotations)
+    #annotations = self.image_info[image_id]["annotations"]
+    #num_instances = len(annotations)
 
     # Initialize mask array
-    mask = np.zeros([image_info["height"], image_info["width"], num_instances],
-                    dtype=np.uint8)
+    #mask = np.zeros([image_info["height"], image_info["width"], num_instances],
+    #                dtype=np.uint8)
 
-    for i, annotation in enumerate(annotations):
-        x, y, w, h = annotation["bbox"]  # Extract bbox coordinates
-        x = int(x)
-        y = int(y)
-        w = int(w)
-        h = int(h)
+    #for i, annotation in enumerate(annotations):
+    #    x, y, w, h = annotation["bbox"]  # Extract bbox coordinates
+    #   x = int(x)
+    #   y = int(y)
+    #   w = int(w)
+    #   h = int(h)
 
         # Set pixel values inside the bounding box to 1
-        mask[y:y+h, x:x+w, i] = 1
+    #   mask[y:y+h, x:x+w, i] = 1
 
     # Return masks and class IDs
-    return mask.astype(np.bool), np.ones([num_instances], dtype=np.int32)
+    #return mask.astype(np.bool), np.ones([num_instances], dtype=np.int32)
+    def load_mask(self, image_id):
+    # Load the multi-class mask
+        mask_path = os.path.join(self.mask_dir, self.image_info[image_id]['id'] + '.tif')
+        mask = skimage.io.imread(mask_path)
+
+    # Calculate the number of basins
+        num_basins = np.max(mask)
+
+    # Create an empty array for masks and class IDs
+        masks = []
+        class_ids = []
+
+    # Convert each basin into a binary mask
+        for basin_id in range(1, num_basins + 1):
+            binary_mask = (mask == basin_id).astype(np.uint8)
+            masks.append(binary_mask)
+            class_ids.append(1)  # Class ID for basins
+
+    # Stack the binary masks along the third axis to create a 3D mask array
+        if masks:
+            masks = np.stack(masks, axis=-1).astype(np.bool)
+            class_ids = np.array(class_ids, dtype=np.int32)
+        else:
+            # If there are no basins, create empty arrays
+            masks = np.zeros((mask.shape[0], mask.shape[1], 0), dtype=np.bool)
+            class_ids = np.zeros((0,), dtype=np.int32)
+
+        return masks, class_ids
+
   def image_reference(self, image_id):
     """Return the path of the image."""
     info = self.image_info[image_id]
