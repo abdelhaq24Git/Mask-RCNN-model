@@ -35,7 +35,7 @@ class BassinDataset(utils.Dataset):
     subset: Subset to load: train or val
     """
     # Add classes. You might have different class names and IDs.
-           self.add_class("basin", 1, "irrigation_basin")
+           self.add_class("bassin", 1, "irrigation_basin")
 
     # Train or validation dataset?
            assert subset in ["train", "val"]
@@ -43,51 +43,29 @@ class BassinDataset(utils.Dataset):
            mask_dir = os.path.join(dataset_dir,subset,subset + "_masks")    # Use "_masks" suffix for masks
 
     # Get a list of image file names
-           image_fps = glob.glob(os.path.join(image_dir, "*.tif"))
+           image_files=os.listdir(image_dir)
 
-           for image_id, image_fp in enumerate(image_fps):
-        # Construct the corresponding mask file path based on the image file name
-               mask_fp = os.path.join(mask_dir,image_fp)
+           for image_file in image_files:
+               if image_file.endswith(".tif"):
+                # Construct the full path to the image file
+                   image_fp_full = os.path.join(image_dir, image_file)
 
-        # Load image size
-               image = skimage.io.imread(image_fp)
-               height, width = image.shape[:2]
+                # Construct the corresponding mask file path based on the image file name
+                   mask_file = image_file.replace(".tif", ".tif")  # Adjust the mask file extension if needed
+                   mask_fp = os.path.join(mask_dir, mask_file)
 
-               self.add_image(
-                   "bassin",
-                   image_id=image_id,
-                   path=image_fp,
-                   width=width,
-                   height=height,
-                   mask_path=mask_fp)
-  #def load_mask(self, image_id):
-    
-    #image_info = self.image_info[image_id]
-    
-    # Check the source of the image
-    #if image_info["source"] != "bassin":
-        #return super(self.__class__, self).load_mask(image_id)
+                  # Load image size
+                  image = skimage.io.imread(image_fp_full)
+                  height, width = image.shape[:2]
 
-    # Load annotations for the image
-    #annotations = self.image_info[image_id]["annotations"]
-    #num_instances = len(annotations)
-
-    # Initialize mask array
-    #mask = np.zeros([image_info["height"], image_info["width"], num_instances],
-    #                dtype=np.uint8)
-
-    #for i, annotation in enumerate(annotations):
-    #    x, y, w, h = annotation["bbox"]  # Extract bbox coordinates
-    #   x = int(x)
-    #   y = int(y)
-    #   w = int(w)
-    #   h = int(h)
-
-        # Set pixel values inside the bounding box to 1
-    #   mask[y:y+h, x:x+w, i] = 1
-
-    # Return masks and class IDs
-    #return mask.astype(np.bool), np.ones([num_instances], dtype=np.int32)
+                  self.add_image(
+                      "bassin",
+                      image_id=image_file[:-4],  # Remove the last 4 characters (".tif") to get image_id
+                      path=image_fp_full,
+                      width=width,
+                      height=height,
+                      mask_path=mask_fp)
+               
     def load_mask(self, image_id):
     # Load the multi-class mask
         mask_path = os.path.join(self.mask_dir, self.image_info[image_id]['id'] + '.tif')
